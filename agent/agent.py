@@ -1,18 +1,23 @@
-from __future__import annotations
+from __future__ import annotations
 from typing import AsyncGenerator
 from agent.events import AgentEvent, AgentEventType
 from client.llm_client import LLMClient
-
-
+from client.response import StreamEventType
+from context.manager import ContextManager
+from tools.registry import create_default_registry
 
 class Agent:
     def __init__(self):
         self.client = LLMClient()
+        self.context_manager = ContextManager()
+        self.tool_registry = create_default_registry()
 
 
     async def run(self, message: str):
         yield AgentEvent.agent_start(message)
         # add user message to context
+
+        self.context_manager.add_user_message(message)
 
         async for event in self._agentic_loop():
             yield event
@@ -24,24 +29,31 @@ class Agent:
         yield AgentEvent.agent_enc()
 
 
-
-
     async def _agentic_loop(self)-> AsyncGenerator[AgentEvent, None]:
+        response_text = ""
+
+        tool_schemas = self.tool_registry.get_schemas()
+
 
         async for event in self.client.chat_completion(
-            messages=[{"role": "user", "content": "Hello, how are you?"}]
-
-            response_text = ""
-
-
-            async for event in self.client,chat_completion(messages, stream=True):
-                if event.type == StreamEvetType.TEXT_DELTA:
+            self.context_manager.get_messages(),
+            tools = tool_schemas if tool_schemas else None,
+            stream = True, 
+            ):
+                
+            if event.type == StreamEventType.TEXT_DELTA:
+                if event.text_delta:
                     content = event.text_delta.content
                     response_text += content
                     yield AgentEvent.text_delta(content)
-                elif event.type == StreamEventType.ERROR:
-                    yield AgentEvent.agent_error(event.error or "Unknown error occured")    
+                    
+            elif event.type == StreamEventType.ERROR:
+                yield AgentEvent.agent_error(event.error or "Unknown error occured")   
 
+             
+            self.context_manager.add_assistant_message(
+                response_text or None,
+            )
             if response_text:
                 yield AgentEvent.text_complete(response_text)
 

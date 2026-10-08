@@ -18,9 +18,12 @@ class LLMClient:
             )
         return self._client
 
+    def _build_tools(self, tools: list[dict[str, Any]]):
+
     async def chat_completion(
             self, 
             messages: list[dict[str, Any]],
+            tools: list[dict[str, Any]] | None = None,
             stream: bool = True
             ) -> AsyncGenerator[StreamEvent, None]:
 
@@ -31,6 +34,9 @@ class LLMClient:
                 "messages": messages,
                 "stream": stream,
             }
+
+            if tools:
+                kwargs['tools'] = tools
 
             for attempt in range(self._max_retries + 1):
                 try:

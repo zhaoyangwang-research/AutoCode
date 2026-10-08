@@ -16,7 +16,7 @@ class ToolKind(str, Enum):
 
 
 @dataclass
-class ToolInokation:
+class ToolInvocation:
     params: dict[str, Any]
     cwd: Path
 
@@ -36,6 +36,37 @@ class ToolResults:
     output: str
     error: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
+    truncated: bool = False
+
+
+    @classmethod
+    def error_result(
+        cls,
+        error: str,
+        output: str = ""
+    ):
+        return cls(
+            success = False,
+            output = output, 
+            error = error 
+        )
+
+    @classmethod
+    def sucess_result(
+        cls,
+        output: str,
+        **kwargs; Any
+    ):
+        return cls(
+            success = True,
+            output = output, 
+            error = None,
+            **kwargs,
+        )
+
+
+
+    
 
 
 
@@ -84,7 +115,7 @@ class Tool(abc.ABC):
             ToolKind.MEMORY, 
         }
 
-    async def get_confirmation(self, invocation: ToolInocation) -> ToolInocation | None:
+    async def get_confirmation(self, invocation: ToolInvocation) -> ToolInvocation | None:
         if not self.is_mutating(invocation.params):
             return None
 

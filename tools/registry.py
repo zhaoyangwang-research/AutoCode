@@ -6,8 +6,6 @@ from tools.builtin import ReadFileTool, get_all_builtin_tools
 
 
 
-
-
 logger = logging.getLogger(__name__)
 
 class ToolRegistry:
