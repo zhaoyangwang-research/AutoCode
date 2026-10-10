@@ -96,8 +96,8 @@ class ReadFileTool(Tool):
             for i, line in enumerate(selection_lines, start = start_idx +1):
                 formatted_lines.append(f"{i:6}|{line}")
 
-            output = "\n".joing(formatted_lines)
-            token_count = count_tokens(output)
+            output = "\n".join(formatted_lines)
+            token_count = count_tokens(output, )
 
             if token_count > self.MAX_OUTPUT_TOKENS:
                 output = truncate_text(

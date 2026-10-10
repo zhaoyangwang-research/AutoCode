@@ -177,8 +177,16 @@ class LLMClient:
         if message.content:
             text_delta = TextDelta(content=message.content)
 
-        
-
+        if message.tool_calls:
+            for tc in message.tool_calls:
+                tool_calls.append(
+                    ToolCall(
+                        call_id=tc.id,
+                        name=tc.function.name,
+                        arguments=parse_tool_call_arguments(tc.function.arguments)
+                    )
+                )
+                
         usage = None
 
         if response.usage:
