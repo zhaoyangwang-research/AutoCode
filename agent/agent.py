@@ -61,7 +61,21 @@ class Agent:
              
             self.context_manager.add_assistant_message(
                 response_text or None,
+                [
+                    {
+                        "id": tc.call_id,
+                        "type": "function",
+                        "function": {
+                            "name": tc.name,
+                            "arguments": str(tc.arguments),
+                        },
+                    }
+                    for tc in tool_calls
+                ]
+                if tool_calls
+                else None
             )
+
             if response_text:
                 yield AgentEvent.text_complete(response_text)
 
