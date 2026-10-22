@@ -21,6 +21,37 @@ class CLI:
             self.agent = agent 
             return await self._process_message(message)
 
+    async def run_interactive(self, message: str) -> str | None:
+
+        self.tui.print_welcome(
+            "AI Agent",
+            lines=[
+                f"model: mistralalai/devstral-2512: free",
+                f"cwd: {Path.cwd()}",
+                "commands: /help /config /approval /model /exit", 
+            ], 
+        )
+        
+        async with Agent() as agent:
+            self.agent = agent 
+
+            while True:
+                try:
+                    user_input = console.input("\n[user]>[/user]").strip()
+                    if not user_input:
+                        continue 
+                    await self._process_message(user_input)
+                except KeyboardInterrupt:
+                    console.print("\n[dim]Use \exit to quit[/dim]")
+
+                except EOFError:
+                    break
+        
+            return await self._process_message(message)
+ 
+        console.print("\n[dim]Goodbye![/dim]")
+    
+
     def _get_tool_kind(self, tool_name:str ) -> str | None:
         tool_kind = None
         tool = self.agent.tool_registry.get(tool_name)
@@ -96,14 +127,39 @@ async def run(messags:dict[str, Any]):
 
 @click.command()
 @click.argument("prompt", required=False)
+@click.option(
+    '--cwd',
+    '-c',
+    type=click.Path(exists=True, file_okay=False, path_type = Path),
+    help = 'current working directory',
+)
+
 def main(
     prompt: str | None = None,
 ):  
+  
+    try:
+        config = load_config(cwd=cwd)
+    except Exception as e:
+        console.print(f"[error]Configuration Error:{e}[\error]")
+
+    errors = config.validate()
+
+    if errors:
+        for error in errors:
+            console.print(f"[error]{error}[\error]]")
+
+        sys.exit(1)
+
     cli = CLI()
-    client = LLMClient()
-    messages = [
-        {"role": "user", "content": prompt},
-    ]
+    
+
+
+    
+    # client = LLMClient()
+    # messages = [
+    #     {"role": "user", "content": prompt},
+    # ]
 
     if prompt:
         result = asyncio.run(cli.run_single(prompt))
