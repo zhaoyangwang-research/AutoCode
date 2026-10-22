@@ -12,13 +12,14 @@ class Agent:
         self.client = LLMClient(config=config)
         self.context_manager = ContextManager(config=config
         self.tool_registry = create_default_registry()
+        self.session: Session | None = Session(self.config)
 
 
     async def run(self, message: str):
         yield AgentEvent.agent_start(message)
         # add user message to context
 
-        self.context_manager.add_user_message(message)
+        self.session.context_manager.add_user_message(message)
 
         async for event in self._agentic_loop():
             yield event
@@ -34,14 +35,15 @@ class Agent:
         max_turns = self.config.max_turns
 
         for turn_num in range(max_turns):
+            self.session.increment_turn()
             
             response_text = ""
 
-            tool_schemas = self.tool_registry.get_schemas()
+            tool_schemas = self.session.tool_registry.get_schemas()
             tool_calls: list[TooCall] = []
 
 
-            async for event in self.client.chat_completion(
+            async for event in self.session.client.chat_completion(
                 self.context_manager.get_messages(),
                 tools = tool_schemas if tool_schemas else None,
                 stream = True, 
@@ -120,10 +122,6 @@ class Agent:
                         tool_result.content,
                     )
 
-
-
-
-
                 async def __aenter__(self) -> Agent:
                     return self
                 async def __aexit__(self,
@@ -131,9 +129,9 @@ class Agent:
                                     exc_val,
                                     exc_tb, 
                 ) -> None:
-                    if self.client:
-                        await self.client.close()
-                        self.client = None
+                    if self.session and self.session.client:
+                        await self.session.client.close()
+                        self.session.client = None
 
 
                 
