@@ -61,8 +61,6 @@ class TUI:
             self.console.print()
         self._assistant_stream_open = False 
 
-
-
     def stream_assistant_delta(self, content: str) -> None:
         self.console.print(content, end="", markig=False)
 
@@ -70,6 +68,7 @@ class TUI:
     def _ordered_args(self, tool_name: str, args: dict[str, Any]) -> list[tuple]:
         _PREFERRED_ORDER ={
             'read_file':['path', 'offset', 'linit'],
+            'memory': ["action", "key", "value"]
 
         }
 
@@ -255,34 +254,62 @@ class TUI:
                     'text,' 
                     theme = "monokai",
                     world_wrap = False,
-
                 ))
 
-        display_args = dict(arguments)
-        for key in ('path', 'cwd'):
-            val = display_args.get(key)
-            if isinstance(val, str) and self.cwd:
-                display_args[key] = str(resolve_path(val, self.cwd))
 
 
-        if truncated:
-            blocks.append(Text("note: tool output was truncated", style="warning"))
-        
-        panel = Panel(
-            Group(
-                *blocks,
-            ),
-            title = title,
-            title_align = 'left',
-            subtitle = Text('done' if success else 'failed', style= status_style),
-            subtitle_align = 'right', 
-            border_display=border_style,
-            box=box.ROUNDED,
-            padding=(1,2)
-        )
+            for key in ('path', 'cwd'):
+                val = display_args.get(key)
+                if isinstance(val, str) and self.cwd:
+                    display_args[key] = str(resolve_path(val, self.cwd))
 
-        self.console.print()
-        self.console.print(panel)
+
+            if truncated:
+                blocks.append(Text("note: tool output was truncated", style="warning"))
+            
+            panel = Panel(
+                Group(
+                    *blocks,
+                ),
+                title = title,
+                title_align = 'left',
+                subtitle = Text('done' if success else 'failed', style= status_style),
+                subtitle_align = 'right', 
+                border_display=border_style,
+                box=box.ROUNDED,
+                padding=(1,2)
+            )
+
+            self.console.print()
+            self.console.print(panel)
+
+        elif name == "memory" and success:
+            action = args.get('action')
+            key = args.get("key")
+            found = metadata.get('found')
+            summary = []
+
+            if isinstance(action, str) and action:
+                summary.append(action)
+            if isinstance(key, str) and key:
+                summary.append(key)
+            if isinstance('found', bool):
+                summary.append('found' if found else 'missing')
+
+
+            if summary:
+                blocks.append(Text("".join(summary), style='muted'))
+
+            output_display = truncate_text(
+                output,
+                self.config.model_name,
+                self._max_blocks_tokens,
+            )
+
+            
+
+
+
 
 
 
