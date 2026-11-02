@@ -2,7 +2,9 @@ from tools.base import Tool
 from config.config import Config
 from dataclasses import dataclass
 from pydantic import BaseModel, Field
-
+import asyncio
+from typing import Any
+from tools.base import Tool, ToolInvocation, ToolResult
 
 
 class SubagentParams(BaseModel):
@@ -41,6 +43,11 @@ class SubagentTool(Tool):
         return True
 
     async def execute(self, invocation: ToolInvocation) -> ToolResult:
+
+        from agent.agent import Agent
+        from agent.events import AgentEventType
+
+
         params = SubagentParams(**invocation.params)
         if not params.goal:
             return ToolResult.error_result("No goal specified for sub-agent")
@@ -81,12 +88,16 @@ class SubagentTool(Tool):
                         final_response = "Sub-agent timed out"
                         break
 
-
-                    if event.type == AgentEvent.tool_call_start:
+                    if event.type == AgentEventType.TOOL_CALL_START:
                         tool_calls.append(event.data.get("name"))
-                    elif event.type == AgentEvent.text_complete:
+                    elif event.type == AgentEventType.TEXT_COMPLETE:
                         final_response = event.data.get("content")
-                    elif event.type == AgentEvent.agent_error:
+
+                    elif event.type == AgentEventType.AGENT_END:
+                        if final_response is None:
+                            final_response = event.data.get("response")
+
+                    elif event.type == AgentEventType.AGENT_ERROR:
                         terminate_response = "error"
                         error = event.data.get("error", " Unknown")
                         final_response = f"Sub-agent error: {error}"
@@ -106,11 +117,9 @@ class SubagentTool(Tool):
         """
 
         if error:
-            return ToolResult.error(result)
+            return ToolResult.error_results(result)
 
         return ToolResult.success_result(result)
-
-
 
 CODE_INVESTIGATOR = SubagentDefinition(
     name = "codebase_investigator",
@@ -136,6 +145,10 @@ DO NOT modify any files.""",
     max_turns = 10,
     timeout_seconds=300,
 )
+
+
+
+
         
 
 

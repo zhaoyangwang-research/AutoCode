@@ -94,7 +94,10 @@ def create_default_registry(config: Config) -> ToolRegistry:
     registry = ToolRegistry(config)
 
     for tool_class in get_all_builtin_tools():
-        registry.register(tool_class())
+        registry.register(tool_class(config))
+
+    for subagent_def in get_default_subagent_definition():
+        registry.register(SubagentTool(config,subagent_def ))
 
     return registry
 

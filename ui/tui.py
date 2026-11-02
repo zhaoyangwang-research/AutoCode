@@ -185,8 +185,6 @@ class TUI:
             )
         )
     
-
-
     def tool_call_complete(
             self,
             call_id: str,
@@ -255,8 +253,6 @@ class TUI:
                     theme = "monokai",
                     world_wrap = False,
                 ))
-
-
 
             for key in ('path', 'cwd'):
                 val = display_args.get(key)
