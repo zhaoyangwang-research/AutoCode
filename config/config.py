@@ -13,7 +13,14 @@ class Config(BaseModel):
     cwd: Path = Field(default_factory=Path.cwd)
 
     max_turns: int = 100
-    max_tool_output_tokens: int=50_000
+
+    allowed_tools: list[str] | None = Field(
+        None,
+        description="If set, only these tools will be available"
+    )
+
+
+
 
     developer_instructions: str | None = None
     user_instructions: str | None = None
@@ -50,6 +57,9 @@ class Config(BaseModel):
             errors.append(f"working diretory does not exist: {self.cwd}")
 
         return errors 
+
+    def to_dict(self) -> dict[str, Any]:
+        return self.model_dump(mode="json")
 
     
 

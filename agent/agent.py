@@ -121,17 +121,19 @@ class Agent:
                         tool_result.tool_call_id,
                         tool_result.content,
                     )
+                    
+        yield AgentEvent.agent_error(f"Maximum turns ({max_turns}) reached")
 
-                async def __aenter__(self) -> Agent:
-                    return self
-                async def __aexit__(self,
-                                    exc_type,
-                                    exc_val,
-                                    exc_tb, 
-                ) -> None:
-                    if self.session and self.session.client:
-                        await self.session.client.close()
-                        self.session.client = None
+    async def __aenter__(self) -> Agent:
+        return self
+    async def __aexit__(self,
+                        exc_type,
+                        exc_val,
+                        exc_tb, 
+    ) -> None:
+        if self.session and self.session.client:
+            await self.session.client.close()
+            self.session.client = None
 
 
                 
