@@ -58,14 +58,6 @@ class ToolDiscoveryManager:
             continue 
 
 
-
     def discover_all(self) -> None:
         self.discover_from_directory(self.config.cwd)
         self.discover_from_directory(get_config_dir())
-
-
-
-    
-
-
-    
