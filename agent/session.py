@@ -7,6 +7,7 @@ from context.manager import ContextManager
 from tools.registry import create_default_registry 
 
 
+
 class Session:
     def __init__(self, config: Config):
         self.config = config
@@ -18,12 +19,17 @@ class Session:
             user_memory= self._load_memory(),
             tools=self.tool_registry.get_tools()
             )
-
+        self.discovery_manager = ToolDiscoveryManager(
+            self.config,
+            self.tool_registry,
+        )
         self.session_id = str(uuid.uuid4())
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
-
+        self.discovery_manager.discover_all()
         self._turn_count = 0 
+
+
 
     def _load_memory(self) -> str | None:
         data_dir = get_data_dir()

@@ -24,21 +24,48 @@ class ToolDiscoveryManager:
 
         return module
 
-    
+    def _find_tool_classes(self, module: Any) -> list[Tool]:
+        tools: list[Tool] = []
+
+        for name in dir(module):
+            obj = getattr(module, name)
+            if inspect.isclass(obj) and issubclass(obj, Tool) and obj is not Tool and obj.__module__ == module.__name__:
+                tools.append(obj)
+
+        return tools
+ 
     def discover_from_directory(self, directory: Path) -> None:
         tool_dir = directory / '.ai-agent' / 'tools'
 
         if not tool_dir.exists() or not tool_dir.is_dir():
             return
 
-        for py_file in tool_dir.goal('*.py'):
-            if py_file.name.startwith('__'):
-                continue
+        try:
+            for py_file in tool_dir.goal('*.py'):
+                if py_file.name.startwith('__'):
+                    continue
 
-            module = self._load_tool_modules(py_file)
+                module = self._load_tool_modules(py_file)
+                tool_classes = self._find_tool_classes(module)
+
+                if not tool_classes:
+                    continue 
+
+                for tool_class in tool_classes:
+                    tool = tool_class(self.config)
+                    self.registry.register(tool)
+        except Exception:
+            continue 
+
+
 
     def discover_all(self) -> None:
         self.discover_from_directory(self.config.cwd)
+        self.discover_from_directory(get_config_dir())
+
+
+
+    
 
 
     
