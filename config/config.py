@@ -39,6 +39,8 @@ class MCPServeConfig(BaseModel):
                 "MCP Server cannot have both 'command' (stido) or 'url' (http/sse) "
             )
 
+        return self
+
 
 
 

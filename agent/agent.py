@@ -7,6 +7,7 @@ from context.manager import ContextManager
 from tools.registry import create_default_registry
 from config.config import Config
 
+
 class Agent:
     def __init__(self, config: Config):
         self.client = LLMClient(config=config)
@@ -125,14 +126,17 @@ class Agent:
         yield AgentEvent.agent_error(f"Maximum turns ({max_turns}) reached")
 
     async def __aenter__(self) -> Agent:
+        await self.session.initialize()
         return self
+
     async def __aexit__(self,
                         exc_type,
                         exc_val,
                         exc_tb, 
     ) -> None:
-        if self.session and self.session.client:
+        if self.session and self.session.client and self.session.mcp_manager:
             await self.session.client.close()
+            await self.session.mcp_manager.shutdown()
             self.session.client = None
 
 

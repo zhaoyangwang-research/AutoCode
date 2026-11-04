@@ -7,3 +7,10 @@ command = "npx"
 args = ["-y",
 "@modelcontextprotocol/server-filesystem",
 "/Users/zhaoyangdeMacBook/Desktop/ai-agent"]
+
+[mcp_serves.filesystem]
+command = "npx"
+args = ["-y",
+"@modelcontextprotocol/server-filesystem",
+"/Users/zhaoyangdeMacBook/Desktop/ai-agent"]
+

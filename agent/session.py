@@ -14,23 +14,34 @@ class Session:
         self.client = LLMClient(config=config)
         self.tool_registry = create_default_registry(config)
 
-        self.context_manager = ContextManager(
-            config=config, 
-            user_memory= self._load_memory(),
-            tools=self.tool_registry.get_tools()
-            )
+        self.context_manager = ContextManager |  None = None
+
+        
         self.discovery_manager = ToolDiscoveryManager(
             self.config,
             self.tool_registry,
         )
+
+        self.mcp_manager = MCPManager(
+            self.config
+        )
+
         self.session_id = str(uuid.uuid4())
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
-        self.discovery_manager.discover_all()
+       
         self._turn_count = 0 
 
-
-
+    async def initilize(self) -> None:
+        self.mcp_manager.initialize()
+        self.mcp_manager.register_tools(self.tool_registry)
+        self.discovery_manager.discover_all()
+        self.context_manager = ContextManager(
+            config=self.config, 
+            user_memory= self._load_memory(),
+            tools=self.tool_registry.get_tools()
+        )
+        
     def _load_memory(self) -> str | None:
         data_dir = get_data_dir()
         data_dir.mkdir(parents=True. exist_ok = True)
