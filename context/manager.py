@@ -44,6 +44,8 @@ class ContextManager:
         self._model_name = "..."
 
         self._messages: list[MessageItem] = []
+        self._latest_usage = TokenUsage()
+        self._total_usage = TokenUsage()
 
     def add_user_message(self, content: str) -> None:
         item = MessageItem(
@@ -101,6 +103,94 @@ class ContextManager:
             messages.append(item.to_dict())
 
         return messages
+
+    def needs_compression(self) -> bool:
+        context_limit = self.config.model.context_window
+        current_tokens= self._latest_usage.total_tokens
+
+
+        return current_tokens > (context_limit * 0.8)
+    
+
+    def set_latest_usage(self, usage: TokenUsage):
+        self._latest_usage = usage
+
+
+    def add_usage(self, usage: TokenUsage):
+        self._total_usage += usage
+
+    def replace_with_summary(self, summary: str) -> None:
+        self._messages = []
+        continuation_content = f"""Content Restoraton (previous session compacted)
+        the previous conversation was compacted due to context length limits. Below is a detaield summmary of the work done so far.
+        **CRITICAL: Actions listed under "Completed Actions" are all ready done. Do not repeat them.**
+
+        ---
+        {summary}
+        ---
+        Resume work from where we left off. Focuso ONLY on the remaining tasks."""
+
+        summary_item = MessageItem(
+            role='user',
+            content=continuation_content,
+            token_count = count_tokens(continuation_content, self._model_name), 
+        )
+
+        self._messages.append(summary_item)
+
+        ack_content = """I've reviewed the context from the previous context
+- The original goal and what was requested 
+- Which actions are Already completed (I will not repeat these)
+- The current state of the project 
+- What still needs to be done 
+
+I'll continue with the REMAININH tasks only, starting from where we talk 
+
+"""
+
+
+        ack_item = MessageItem(
+                    role='assistant',
+                    content=ack_content,
+                    token_count = count_tokens(ack_item, self._model_name), 
+                )
+        
+        self._messages.append(ack_item)
+
+        continue_content = (
+            "Continue with the REMAINING work only. Do not repeat any complected actions."
+            "Proceed with the next step as described in the context above."
+        )
+
+        continue_item = MessageItem(
+            role='user',
+            content=continue_content,
+            token_count = count_tokens(continue_item, self._model_name), 
+        )
+
+        self._messages.append(continue_item)
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+
 
 
 

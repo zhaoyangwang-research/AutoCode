@@ -40,9 +40,21 @@ class Agent:
             
             response_text = ""
 
+            # check for context window
+            if self.session.context_manager.needs_compression():
+                summary, usage = await self.session.chat_compactor.compression(
+                    self.session.context_manager
+                )
+
+                if summary:
+                    self.session.context_manager.replace_with_summary(summary)
+                    self.session.context_manager.set_latest_usage(usage)
+                    self.session.context_manager.add_usage(usage)
+                
             tool_schemas = self.session.tool_registry.get_schemas()
             tool_calls: list[TooCall] = []
 
+            usage: TokenUsage | None = None
 
             async for event in self.session.client.chat_completion(
                 self.context_manager.get_messages(),
@@ -66,7 +78,9 @@ class Agent:
                 elif event.type == StreamEventType.ERROR:
                     yield AgentEvent.agent_error(event.error or "Unknown error occured")   
 
-                
+                elif event.type == StreamEventType.MESSAGE_COMPLETE:
+                    usage =  event.usage
+                    
                 self.context_manager.add_assistant_message(
                     response_text or None,
                     [
@@ -86,6 +100,14 @@ class Agent:
 
                 if response_text:
                     yield AgentEvent.text_complete(response_text)
+
+                if not tool_calls:
+                    if usage:
+                        self.session.context_manager.set_latest_usage(usage)
+                        self.session.context_manage.add_usage(usage)
+
+                    return 
+                        
 
                 tool_call_results: list[ToolResultMessage] = []
 
@@ -122,7 +144,11 @@ class Agent:
                         tool_result.tool_call_id,
                         tool_result.content,
                     )
-                    
+
+                if usage:
+                    self.session.context_manager.set_latest_usage(usage)
+                    self.session.context_manage.add_usage(usage)
+
         yield AgentEvent.agent_error(f"Maximum turns ({max_turns}) reached")
 
     async def __aenter__(self) -> Agent:
