@@ -170,6 +170,19 @@ I'll continue with the REMAININH tasks only, starting from where we talk
 
         self._messages.append(continue_item)
 
+    def prune_tool_outputs(self) -> int:
+        user_message_count = sum(1 for msg in self._messages if msg.role == "user")
+
+        if user_message_count < 2:
+            return 0
+
+        for msg in reversed(self._messages):
+            continue 
+
+
+
+
+
 
 
 
