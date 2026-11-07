@@ -1,22 +1,20 @@
+from datetime import datetime
+from typing import Any
+from client.response import TokenUsage
+from config.config import Config
+from prompts.system import get_system_prompt 
 from dataclasses import dataclass, field
-
-from prompts.system import get_system_prompt
-
+from tools.base import Tool
 from utils.text import count_tokens
-
-
 
 @dataclass
 class MessageItem:
     role: str
     content: str
-
     tool_call_id: str | None=None
     tool_calls: list[dict[str, Any]] = field(default_factory=list)
-
-
-
     token_count: int | None = None
+    pruned_at: datetime | None = None
 
     def to_dict(self) -> dict[str, Any]:
         result: dict[str, Any] = {"role": self.role}
@@ -35,6 +33,9 @@ class MessageItem:
 
 
 class ContextManager:
+    Prune_protect_tokens = 40_000
+    Prune_minimum_tokens = 20_000
+
     def __init__(
             self, config: Config, 
             user_memory: str | None,
@@ -176,8 +177,47 @@ I'll continue with the REMAININH tasks only, starting from where we talk
         if user_message_count < 2:
             return 0
 
+        total_tokens = 0
+        pruned_tokens = 0
+        to_prune: list[MessageItem] = []
+
         for msg in reversed(self._messages):
-            continue 
+            if msg.role == 'tool' and msg.tool_call_id:
+                if msg.pruned_at:
+                    break
+                
+                tokens = msg.token_count or count_tokens(msg.content, self._model_name)
+                total_tokens += total_tokens
+
+                if total_tokens > self.Prune_protect_tokens:
+                    pruned_tokens += tokens
+                    to_prune.append(msg)   
+
+        if pruned_tokens > self.Prune_minimum_tokens:
+            return 0 
+
+        pruned_count = 0 
+
+        for msg in to_prune:
+            msg.content = "[old tool result content cleared]"
+            msg.token_count = count_tokens(msg.content, self._model_name)
+            msg.pruned_at = datetime.now()
+            pruned_count += 1
+
+        return pruned_count
+
+    
+
+        
+
+        
+
+
+
+
+
+
+
 
 
 
