@@ -42,8 +42,13 @@ class MCPServeConfig(BaseModel):
         return self
 
 
-
-
+class ApprovalPolicy(str, Enum):
+    ON_REQUEST = "on-request"
+    ON_FAILURE = "on-failure"
+    AUTO_EDIT = "auto-edut"
+    AUTO = "auto"
+    NEVER = "never"
+    YOLO = "tolo"
 
 
 
@@ -51,6 +56,8 @@ class MCPServeConfig(BaseModel):
 class Config(BaseModel):
     model: ModelConfig = Field(default_factory=ModelConfig)
     cwd: Path = Field(default_factory=Path.cwd)
+
+    approval: ApprovalPolicy = ApprovalPolicy.ON_REQUEST
 
     max_turns: int = 100
     mcp_serves: dict[str, MCPServerConfig] = Field(default_factory=dict)

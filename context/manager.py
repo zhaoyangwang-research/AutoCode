@@ -185,7 +185,7 @@ I'll continue with the REMAININH tasks only, starting from where we talk
             if msg.role == 'tool' and msg.tool_call_id:
                 if msg.pruned_at:
                     break
-                
+
                 tokens = msg.token_count or count_tokens(msg.content, self._model_name)
                 total_tokens += total_tokens
 
@@ -205,6 +205,8 @@ I'll continue with the REMAININH tasks only, starting from where we talk
             pruned_count += 1
 
         return pruned_count
+
+
 
     
 
