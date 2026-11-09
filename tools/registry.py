@@ -67,6 +67,7 @@ class ToolRegistry:
             name: str, 
             params: dict[str, Any], 
             cwd: Path | None,
+            approval_manger: ApprovalManager | None = None,
     ) -> ToolResult:
         tool = self.get(name)
         if tool is None:
@@ -89,6 +90,21 @@ class ToolRegistry:
             params = params,
             cwd = cwd,
         )
+
+# check for different tools for built-in tools and give confirmation in tools.  
+        if approval_manger:
+            confirmation = await tool.get_confirmation()
+            if confirmation:
+                context = approval_manger(
+                    tool_name = name,
+                    params = params,
+                    is_mutating=tool.is_mutating(params),
+                    affected_paths= confirmation.affected_paths,
+                    command=confirmation.command,
+                    is_dangerous=confirmation.is_dangerous,
+                )
+                
+                decision = await approval_manager.check_approval(context)
 
         try:
             result = await tool.execute(invocation)
