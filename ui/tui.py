@@ -6,10 +6,15 @@ from rich.rule import Rule
 from rich.text import Text
 from rich.panel import Panel
 from rich.table import Table
+from rich import box
+from rich.prompt import Prompt 
+
 from rich.box import box
 from utils.paths import resolve_path, display_path_rel_to_cwd
-from rich import Syntax
-
+from rich.syntax import Syntax
+from config.config import Config
+from tools.base import ToolConfirmation
+from utils.paths import display_path_rel_to_cwd
 
 import re
 
@@ -303,6 +308,44 @@ class TUI:
             )
 
             
+    def handle_confirmation(self, confirmation: ToolConfirmation):
+        output = [
+            Text(confirmation.tool_name, style = 'tool')
+            Text(confirmation.description, style = 'code')
+        ]
+        if confirmation.command:
+            output.append(Text(f'${confirmation.command}', style='warning'))
+
+        if confirmation.diff:
+            diff_text = confirmatio.diff.to_diff()
+            output.append(Syntax(
+                diff_text,
+                "diff",
+                theme="monokai",
+                word_wrap = True,
+            )
+        )
+        self.console.print()
+        self.console.print(
+            Panel(
+                Group(*output),
+                title = Text('Approval required', style = 'warning'),
+                title_align = 'left',
+                border_style = 'warning',
+                box=box.ROUNDED,
+                padding=(1,2),  
+            )
+        )
+
+        response =  Prompt.ask(
+            'lnApprove?',
+            choice=['y', 'n', 'yes', 'no' ],
+            default = 'n'
+        )
+
+        return response.lower() in {'y', 'yes'}
+
+
 
 
 

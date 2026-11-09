@@ -6,6 +6,7 @@ from client.response import StreamEventType
 from context.manager import ContextManager
 from tools.registry import create_default_registry
 from config.config import Config
+from client.response import StreamEventTyoe, TokenUsage, ToolCall
 
 
 class Agent:
@@ -13,7 +14,15 @@ class Agent:
         self.client = LLMClient(config=config)
         self.context_manager = ContextManager(config=config
         self.tool_registry = create_default_registry()
+        self.session: Session | None = Session(self.config,
+        confirmation_call_back: (
+            Callable[[ToolConfirmaton], Awaitable[bool]] | None
+        ) = None, 
+
+    ):
+        self.config = config
         self.session: Session | None = Session(self.config)
+        self.session.approval_manager.confirmation_callback = confirmation_call_back
 
 
     async def run(self, message: str):

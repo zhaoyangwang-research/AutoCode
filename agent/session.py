@@ -5,7 +5,7 @@ from config.config import Config
 from config.loader import get_data_dir
 from context.manager import ContextManager
 from tools.registry import create_default_registry 
-
+from client.response import StreamEventTyoe, TokenUsage, ToolCall
 
 
 class Session:
@@ -25,6 +25,12 @@ class Session:
         self.mcp_manager = MCPManager(
             self.config
         )
+
+        self.chat_compactor = ChatCompactor(self.client)
+        self.approval_manager = ApprovalManager(
+            self.config.approval,
+            self.config.cwd,
+            )
 
         self.session_id = str(uuid.uuid4())
         self.created_at = datetime.now()

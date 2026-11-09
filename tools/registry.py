@@ -103,8 +103,15 @@ class ToolRegistry:
                     command=confirmation.command,
                     is_dangerous=confirmation.is_dangerous,
                 )
-                
+
                 decision = await approval_manager.check_approval(context)
+                if decision == ApproalDecision.REJECTED:
+                    return ToolResult.error_result("Operation rejected by safety polict")
+                elif decision == ApprovlDecision.NEEDS_CONFIRMATION:
+                    approved = await approval_manger.request_confirmation()
+                    if not approved:
+                        return ToolResult.error_result("User rejected the Operation")
+
 
         try:
             result = await tool.execute(invocation)

@@ -33,7 +33,11 @@ class CLI:
             ], 
         )
         
-        async with Agent(self.config) as agent:
+        async with Agent(
+            self.config,
+            confirmation_callback=self.tui.handle_confirmation,
+            ) as agent:
+            
             self.agent = agent 
 
             while True:
