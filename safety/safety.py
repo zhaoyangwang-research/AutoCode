@@ -55,7 +55,7 @@ class ApprovalManager:
         self,
         approval_policy: ApprovalPolicy,
         cwd: Path,
-        confirmaton_callback: callable[[ToolConfirmation], Awaitable[bool]] | None = None],           
+        confirmaton_callback: callable[[ToolConfirmation], bool] | None = None],           
     ):
         self.approval_policy = approval_policy
         self.cwd = cwd 

@@ -308,7 +308,7 @@ class TUI:
             )
 
             
-    def handle_confirmation(self, confirmation: ToolConfirmation):
+    def handle_confirmation(self, confirmation: ToolConfirmation) -> bool:
         output = [
             Text(confirmation.tool_name, style = 'tool')
             Text(confirmation.description, style = 'code')

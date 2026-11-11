@@ -52,13 +52,38 @@ class ApprovalPolicy(str, Enum):
 
 
 
+class HookTrigger(str, Enum):
+    Before_Agent = 'before_agent'
+    After_Agent ='after_agent'
+    Before_Tool = 'before_tool'
+    After_Tool = 'after_tool'
+    On_Error = 'on_error'
+
+
+
+
+class HookConfig(BaseModel):
+    name: str
+    trigger: HookTrigger
+    command: str | None = None
+    script: str | None = None
+    timeout_sec: float = 30
+    enabled: bool = True
+
+    @model_validator(mode='after')
+    def validate_hook(self) -> HookConfig:
+        if not self.command and not self.script:
+            raise ValueError("Hook must either have 'command' or 'script'")
+        return self  
+
 
 class Config(BaseModel):
     model: ModelConfig = Field(default_factory=ModelConfig)
     cwd: Path = Field(default_factory=Path.cwd)
 
     approval: ApprovalPolicy = ApprovalPolicy.ON_REQUEST
-
+    hooks_enabled: bool = False
+    hooks: list[HookConfig] = Field(default_factory=HookConfig)
     max_turns: int = 100
     mcp_serves: dict[str, MCPServerConfig] = Field(default_factory=dict)
 

@@ -16,7 +16,7 @@ class Agent:
         self.tool_registry = create_default_registry()
         self.session: Session | None = Session(self.config,
         confirmation_call_back: (
-            Callable[[ToolConfirmaton], Awaitable[bool]] | None
+            Callable[[ToolConfirmaton], bool] | None
         ) = None, 
 
     ):
