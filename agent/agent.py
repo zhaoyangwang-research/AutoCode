@@ -26,6 +26,7 @@ class Agent:
 
 
     async def run(self, message: str):
+        await self.session.hook_system.trigger_before_agent(message)
         yield AgentEvent.agent_start(message)
         # add user message to context
 
@@ -37,10 +38,8 @@ class Agent:
             if event.type == AgentEventType.TEXT_COMPLETE:
                 final_response = event.data.get("content")
 
-
-        yield AgentEvent.agent_enc()
-
-
+        await self.session.hook_system.trigger_after_agent(message, final_response)
+        yield AgentEvent.agent_end(final_response)
 
     async def _agentic_loop(self)-> AsyncGenerator[AgentEvent, None]:
         max_turns = self.config.max_turns
@@ -82,9 +81,6 @@ class Agent:
                     if event.tool_call:
                         tool_calls.append(event.tool_call)
 
-                
-                
-                        
                 elif event.type == StreamEventType.ERROR:
                     yield AgentEvent.agent_error(event.error or "Unknown error occured")   
 
@@ -131,10 +127,12 @@ class Agent:
                         tool_call.arguments,
                     )
 
-                    result = await self.tool_registry.invoke(
+                    result = await self.session.tool_registry.invoke(
                         tool_call.name,
                         tool_call.arguments,
-                        Path.cwd,
+                        self.config.cwd,
+                        self.session.hook_system,
+                        self.session.approval_manager,
                     )
 
                     yield AgentEvent.tool_call_complete(
