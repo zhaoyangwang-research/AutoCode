@@ -205,6 +205,10 @@ I'll continue with the REMAININH tasks only, starting from where we talk
             pruned_count += 1
 
         return pruned_count
+    
+    def clear(self) -> None:
+        self._messages = []
+
 
 
 

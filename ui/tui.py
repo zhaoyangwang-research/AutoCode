@@ -8,7 +8,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich import box
 from rich.prompt import Prompt 
-
+from rich.markdown import Markdown
 from rich.box import box
 from utils.paths import resolve_path, display_path_rel_to_cwd
 from rich.syntax import Syntax
@@ -347,6 +347,17 @@ class TUI:
 
 
 
+    def show_help(self) -> None:
+        help_text =  """
+##commands
+- '/help' -Show this help 
+- '/exit' or 'quit' - Exit the agent
+
+##tips
+- Just type your message to chat with the agent 
+- The agent can read, write, and execute code
+"""
+        self.console.print(Markdown(help_text))
 
 
 
