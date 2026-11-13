@@ -14,7 +14,7 @@ class LoopDetector:
             output.append(details.get('tool_name', ''))
             args = details.get('args', {})
 
-            if isinstance(args, {}):
+            if isinstance(args, dict):
                 for k in sorted(args.keys()):
                     output.append(f"{k} = {str(args[k])}")
 
@@ -27,6 +27,7 @@ class LoopDetector:
     def check_for_loop(self) -> str | None:
         if len(self._history) < 2:
             return None
+        
         if len(self._history) >= self.max_exact_repeats:
             recent = list(self._history)[-self.max_exact_repeats:]
             if len(set(recent)) == 1:
@@ -36,7 +37,12 @@ class LoopDetector:
             history = list(self._history)
             # Check differet loop patterns [A, B, C, A, B, C] [A, B, C] check here
             for cycle_len in range(2, min(self.max_cycle_length +1, len(history) // 2+1)):
-                continue 
+                recent = history[-cycle_len*2:]
+                if recent[:cycle_len] == recent[cycle_len:]:
+                    return f"Detected repeating cycle of length {cycle_len}"
+                
+        return None
+                
 
              
 

@@ -31,7 +31,7 @@ class Session:
             self.config.approval,
             self.config.cwd,
             )
-
+        self.loop_detector = LoopDetector()
         self.hook_system = HookSystem(config)
 
         self.session_id = str(uuid.uuid4())
