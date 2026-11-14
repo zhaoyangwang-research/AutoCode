@@ -6,7 +6,7 @@ import click
 from agent.agent import Agent
 from agent.events import AgentEventType
 from ui.tui import TUI, get_console
-
+from typing import Any
 
 console = get_console()
 
@@ -143,11 +143,72 @@ class CLI:
             self.agent.session.context_manager.clear()
             self.agent.session.loop_detector.clear()
             console.print('[success]Conversation Cleared [/success]')
+        elif command == '/config':
+            console.print(f" Model: {self.config.model_name}")
+            console.print(f" Temperature: {self.config.temperature}")
+            console.print(f" Approval: {self.config.approval_policy.value}")
+            console.print(f" Working Dir: {self.config.cwd}")
+            console.print(f" Max Turns: {self.config.max_turns}")
+            console.print(f" Hooks Enables: {self.config.hooks_enabled}")
+
+        elif cmd_name == '/model':
+            if cmd_args:
+                self.config.model_name = cmd_args
+                console.print('[success] Model changed to: {cmd_args} [/success]')
+            else:
+                console.print(f"Current model: {self.config.model_name}")
+
+        elif cmd_name == '/approval':
+            if cmd_args:
+                try:
+                    approval = ApprovalPolicy(cmd_args)
+                    self.config.approval = approval
+                    console.print('[success] Approval policy to: {cmd_args} [/success]')
+                except:
+                    console.print(
+                        f"[error] Incorrect approval policy: {cmd_args} [/error]"
+                    )
+                
+                    console.print(
+                        f"Valid options: {','.join(p for p in ApprovalPolicy)}"
+                    )
+
+            else:
+                console.print(f"Current approval policy: {self.config.approval.value}")
+
+        elif cmd_name == '/stats':
+            stats = self.agent.session.get_stats()
+            console.print("\n[bold]Session Statistics [\bold]")
+            for key, value in stats.items():
+                console.print(f"{key}: {value}")
+
+        elif cmd_name == '/tools':
+            tools = self.agent.session.tool_registry.get_tools()
+            console.print("\n[bold]Available tools ({len(tools)}) [\bold]")
+            for tool in tools:
+                console.print(f" {tool.name}")
+
+        elif cmd_name == '/mcp':
+            mcp_servers = self.agent.session.mcp_manager.get_all_servers()
+            console.print("\n[bold]MCP Servers tools ({len(mcp_servers)}) [\bold]")
+            for server in mcp_servers:
+                status = server["status"]
+                status_color = "green" if status == "connected" else "red"
+                console.print(
+                    f" {server['name']}: [{status_color}]{status}[/{status_color}] ({server['tools']} tools)"
+                )
+
+                
+
+                
+
+
 
         else: 
             console.print('[error]Unknon command: {command}[/error]')
 
         return True
+
 
 
 async def run(messags:dict[str, Any]):

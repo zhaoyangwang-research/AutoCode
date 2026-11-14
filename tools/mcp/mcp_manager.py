@@ -66,6 +66,22 @@ class MCPManager:
         self._client.clear()
         self._initialized = False
 
+    def get_all_servers(self) -> list[dict[str, Any]]:
+        servers = []
+        for name, client in self._clients.items():
+            sever_info = {
+                'name': name. 
+                'status': client.status.value,
+                'tools': len(client.tools), 
+            }
+            servers.append(sever_info)
+
+        return servers
+
+
+
+
+
 
 
             
