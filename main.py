@@ -198,18 +198,34 @@ class CLI:
                     f" {server['name']}: [{status_color}]{status}[/{status_color}] ({server['tools']} tools)"
                 )
 
-                
+        elif cmd_name == '/save':
+            persistence_manager = persistence_manager()
+            persistence_manager.list_sessions
+            session_snapshot = SessionSnapshot(
+                session_id = self.agent.session.session_id,
+                created_at= self.agent.session.created_at, 
+                updated_at = self.agent.session.updated_at,
+                turn_count = self.agent.session.turn_count,
+                messages = self.agent.session.context_manager.get_messages()
+            )
 
-                
+            persistence_manager.save_session(session_snapshot)
 
+            console.print('[success]Session saved: {self.agent.session.session_id}[/success]')
 
+        elif cmd_name == '/sessions':
+            persistence_manager = persistence_manager()
+            sessions = persistence_manager.list_sessions()
+            console.print("\n[bold]Saved Sessions[/bold]")
+            for s in sessions:
+                console.print(
+                    f"{s['turn_count']}, updated: {s['updated_at']}"
+                )
 
         else: 
             console.print('[error]Unknon command: {command}[/error]')
 
         return True
-
-
 
 async def run(messags:dict[str, Any]):
     client = LLMClient()
