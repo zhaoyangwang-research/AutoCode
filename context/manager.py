@@ -46,16 +46,16 @@ class ContextManager:
 
         self._messages: list[MessageItem] = []
         self._latest_usage = TokenUsage()
-        self._total_usage = TokenUsage()
+        self.total_usage = TokenUsage()
+
+
+
 
     @property
     def message_count(self) -> int:
         return len(self._messages)
 
-    @property
-    def total_usage(self) -> TokenUsage:
-        return self._total_usage
-    
+   
     def add_user_message(self, content: str) -> None:
         item = MessageItem(
             role="user",
@@ -116,8 +116,6 @@ class ContextManager:
     def needs_compression(self) -> bool:
         context_limit = self.config.model.context_window
         current_tokens= self._latest_usage.total_tokens
-
-
         return current_tokens > (context_limit * 0.8)
     
 
@@ -126,7 +124,7 @@ class ContextManager:
 
 
     def add_usage(self, usage: TokenUsage):
-        self._total_usage += usage
+        self.total_usage += usage
 
     def replace_with_summary(self, summary: str) -> None:
         self._messages = []

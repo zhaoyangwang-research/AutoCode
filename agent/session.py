@@ -38,11 +38,7 @@ class Session:
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
        
-        self._turn_count = 0 
-
-    @property
-    def turn_count(self) -> int:
-        return self._turn_count
+        self.turn_count = 0 
 
 
     
@@ -82,7 +78,7 @@ class Session:
 
 
     def increment_turn(self) -> int:
-        self._turn_count += 1
+        self.turn_count += 1
         self.updated_at = datetime.now()
 
         return self._turn_count 

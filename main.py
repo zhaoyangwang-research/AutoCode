@@ -46,7 +46,7 @@ class CLI:
                         continue 
 
                     if user_input.startswith("/"):
-                        should_continue = self._handle_command(user_input)
+                        should_continue = await self._handle_command(user_input)
                         if not should_continue:
                             break
                         continue
@@ -130,7 +130,7 @@ class CLI:
 
         return final_response 
 
-    def _handle_command(self, command: str) -> bool:
+    async def _handle_command(self, command: str) -> bool:
         cmd = command.lower().strip()
         parts = cmd.split(maxsplit=1)
         cmd_name = parts[0]
@@ -199,14 +199,15 @@ class CLI:
                 )
 
         elif cmd_name == '/save':
-            persistence_manager = persistence_manager()
+            persistence_manager = Persistence_manager()
             persistence_manager.list_sessions
             session_snapshot = SessionSnapshot(
                 session_id = self.agent.session.session_id,
                 created_at= self.agent.session.created_at, 
                 updated_at = self.agent.session.updated_at,
                 turn_count = self.agent.session.turn_count,
-                messages = self.agent.session.context_manager.get_messages()
+                messages = self.agent.session.context_manager.get_messages(),
+                total_usage = self.agent.session.context_manager.total_usage,
             )
 
             persistence_manager.save_session(session_snapshot)
@@ -221,6 +222,41 @@ class CLI:
                 console.print(
                     f"{s['turn_count']}, updated: {s['updated_at']}"
                 )
+
+        elif cmd_name == '/resume':
+            if not cmd_args:
+                console.print(f"[error]Usage: /resume <session_id> [/error]")
+            else:
+                persistence_manager = Persistence_manager()
+                snapshot = persistence_manager.load_session(cmd_args)
+                if not snapshot:
+                    console.print(f"[error]Session does not exist [/error]")
+                else:
+                    session = Session(
+                        config = self.config, 
+                    )
+                    
+                    await session.initialize()
+                    session.session_id = snapshot.session_id
+                    session.created_at = snapshot.created_at
+                    session.updated_at = snapshot.updated_at
+                    session.turn_count = snapshot.turn_count
+                    session.context_manager.total_usage = snapshot.total_usage
+
+                    for msg in snapshot.messages:
+                        if msg.get('role') == 'system':
+                            continue
+                        else msg['role'] == 'user':
+                            session.context_manager.add_user_message(msg.get('content', '')
+                        elif msg['role'] == 'assistant':
+                            session.context_manager.add_assistant_message(msg.get('content', ''), msg.get('tool_calls'))
+                        elif msg['role'] == 'tool':
+                            session.context_manager.add_tool_result(msg.get('tool_call_id', ''), msg.get('content', ""))
+
+                    await self.agent.session.client.close()
+                    await self.agent.session.mcp_manager.shutdown()                  
+                    self.agent.session = session
+                    console.print(f"[success] Resumed session: {session.session_id}")
 
         else: 
             console.print('[error]Unknon command: {command}[/error]')
