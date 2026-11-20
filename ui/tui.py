@@ -15,7 +15,7 @@ from rich.syntax import Syntax
 from config.config import Config
 from tools.base import ToolConfirmation
 from utils.paths import display_path_rel_to_cwd
-
+from utils.text import truncate_text
 import re
 
 
@@ -55,6 +55,7 @@ class TUI:
         self._tool_args_by_call_id: dict[str, dict[str, Any]] = {}
         self.config = config
         self.cwd = self.config.cwd
+        self._max_block_tokens = 240 
         
     def begin_assistant(self) -> None:
         self.console.print()
@@ -73,8 +74,8 @@ class TUI:
     def _ordered_args(self, tool_name: str, args: dict[str, Any]) -> list[tuple]:
         _PREFERRED_ORDER ={
             'read_file':['path', 'offset', 'linit'],
+            'write_file':["path", "create_directories", "content"],
             'memory': ["action", "key", "value"]
-
         }
 
         preferred = _PREFERRED_ORDER.get(tool_name, [])
@@ -92,14 +93,20 @@ class TUI:
         return ordered
 
 
-
-    def _render_args_table(tool_name: str, 
+    def _render_args_table(self, 
+                           tool_name: str, 
                            args: dict[str, Any]) -> Table:
         table = Table.grid(padding=[0, 1])
         table.add_column(style="muted", justify="right", no_wrap = True)
         table.add_column(style="code", overflow="fold")
 
         for key, value in self._ordered_args(tool_name, args):
+            if isinstance(value, str):
+                if key in {'content', 'old_content', 'new_string'}:
+                    line_count = len(value.splitlines()) or 0:
+                    byte_count = len(value.encode('utf-8', error='replace'))
+                    value = f"<{line_count} lines {byte_count} bytes>"
+
             table.add_row(key, value)
 
         return table
@@ -127,8 +134,6 @@ class TUI:
             val = display_args.get(key)
             if isinstance(val, str) and self.cwd:
                 display_args[key] = str(resolve_path(val, self.cwd))
-
-
 
         panel = Panel(
             self._render_args_table(name, display_args) if display_args else Text('(no args)', style='muted'),
@@ -199,6 +204,7 @@ class TUI:
             output: str,
             error: str | None,
             metadata: dict[str, Any] | None,
+            diff: str | None,
             truncated: bool,
         ) -> None:
         
@@ -251,7 +257,11 @@ class TUI:
                     )
                 )
             else:
-                output_display = truncate_text(output, "", 240, )
+                output_display = truncate_text(
+                    output, 
+                    "", 
+                    self._max_block_tokens)
+                
                 blocks.append(Syntax(
                     output_display,
                     'text,' 
@@ -265,25 +275,42 @@ class TUI:
                     display_args[key] = str(resolve_path(val, self.cwd))
 
 
-            if truncated:
-                blocks.append(Text("note: tool output was truncated", style="warning"))
-            
-            panel = Panel(
-                Group(
-                    *blocks,
-                ),
-                title = title,
-                title_align = 'left',
-                subtitle = Text('done' if success else 'failed', style= status_style),
-                subtitle_align = 'right', 
-                border_display=border_style,
-                box=box.ROUNDED,
-                padding=(1,2)
-            )
+        elif name == 'write_file' and success and diff:
+            output_line = output.strip() if output.strip() else "Completed"
+            blocks.append(Text(output_line, style='muted'))
+            diff_text = diff
+            diff_display = truncate_text(
+                diff_text, 
+                self.config.model_name, 
+                self._max_block_tokens
+                )
+            blocks.append(Syntax(
+                diff_display, 
+                'diff', 
+                theme='monokai', 
+                word_wrap=True))
 
-            self.console.print()
-            self.console.print(panel)
+        if truncated:
+            blocks.append(Text("note: tool output was truncated", style="warning"))
+        
+        panel = Panel(
+            Group(
+                *blocks,
+            ),
+            title = title,
+            title_align = 'left',
+            subtitle = Text('done' if success else 'failed', style= status_style),
+            subtitle_align = 'right', 
+            border_display=border_style,
+            box=box.ROUNDED,
+            padding=(1,2)
+        )
 
+        self.console.print()
+        self.console.print(panel)
+
+
+        
         elif name == "memory" and success:
             action = args.get('action')
             key = args.get("key")

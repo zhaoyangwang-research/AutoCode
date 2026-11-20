@@ -125,6 +125,7 @@ class CLI:
                     event.data.get("output", "" ),
                     event.data.get("error"),
                     event.data.get("metadata"),
+                    event.data.get('diff'), 
                     event.data.get("truncated", False),  
                 )
 
@@ -197,7 +198,6 @@ class CLI:
                 console.print(
                     f" {server['name']}: [{status_color}]{status}[/{status_color}] ({server['tools']} tools)"
                 )
-
         elif cmd_name == '/save':
             persistence_manager = Persistence_manager()
             persistence_manager.list_sessions
@@ -347,9 +347,6 @@ def main(
         sys.exit(1)
 
     cli = CLI(config)
-    
-
-
     
     # client = LLMClient()
     # messages = [
