@@ -75,9 +75,10 @@ class TUI:
         _PREFERRED_ORDER ={
             'read_file':['path', 'offset', 'linit'],
             'write_file':["path", "create_directories", "content"],
+            'edit':  ["path", "replace_all", "old_string", "new_string"], 
             'memory': ["action", "key", "value"]
         }
-
+        
         preferred = _PREFERRED_ORDER.get(tool_name, [])
         ordered: list[tuple[str, Any]] = []
         seen = set()
@@ -102,7 +103,7 @@ class TUI:
 
         for key, value in self._ordered_args(tool_name, args):
             if isinstance(value, str):
-                if key in {'content', 'old_content', 'new_string'}:
+                if key in {'content', 'old_string', 'new_string'}:
                     line_count = len(value.splitlines()) or 0:
                     byte_count = len(value.encode('utf-8', error='replace'))
                     value = f"<{line_count} lines {byte_count} bytes>"
@@ -275,7 +276,7 @@ class TUI:
                     display_args[key] = str(resolve_path(val, self.cwd))
 
 
-        elif name == 'write_file' and success and diff:
+        elif name in {"write_file", "edit"} and success and diff:
             output_line = output.strip() if output.strip() else "Completed"
             blocks.append(Text(output_line, style='muted'))
             diff_text = diff
@@ -290,27 +291,6 @@ class TUI:
                 theme='monokai', 
                 word_wrap=True))
 
-        if truncated:
-            blocks.append(Text("note: tool output was truncated", style="warning"))
-        
-        panel = Panel(
-            Group(
-                *blocks,
-            ),
-            title = title,
-            title_align = 'left',
-            subtitle = Text('done' if success else 'failed', style= status_style),
-            subtitle_align = 'right', 
-            border_display=border_style,
-            box=box.ROUNDED,
-            padding=(1,2)
-        )
-
-        self.console.print()
-        self.console.print(panel)
-
-
-        
         elif name == "memory" and success:
             action = args.get('action')
             key = args.get("key")
@@ -333,6 +313,27 @@ class TUI:
                 self.config.model_name,
                 self._max_blocks_tokens,
             )
+
+        if truncated:
+            blocks.append(Text("note: tool output was truncated", style="warning"))
+        
+        panel = Panel(
+            Group(
+                *blocks,
+            ),
+            title = title,
+            title_align = 'left',
+            subtitle = Text('done' if success else 'failed', style= status_style),
+            subtitle_align = 'right', 
+            border_display=border_style,
+            box=box.ROUNDED,
+            padding=(1,2)
+        )
+
+        self.console.print()
+        self.console.print(panel)
+
+    
 
             
     def handle_confirmation(self, confirmation: ToolConfirmation) -> bool:
