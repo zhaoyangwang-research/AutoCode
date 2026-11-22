@@ -77,9 +77,22 @@ class HookConfig(BaseModel):
         return self  
 
 
+class ShellEnvironmentPolicy(BaseModel):
+    ignore_default_excludes: bool = False
+    
+
+
+
+
+
 class Config(BaseModel):
     model: ModelConfig = Field(default_factory=ModelConfig)
     cwd: Path = Field(default_factory=Path.cwd)
+
+    shell_environment: ShellEnvironmentPolicy = Field(
+        default_factory= ShellEnvironmentPolicy
+    )
+
 
     approval: ApprovalPolicy = ApprovalPolicy.ON_REQUEST
     hooks_enabled: bool = False
