@@ -207,6 +207,7 @@ class TUI:
             metadata: dict[str, Any] | None,
             diff: str | None,
             truncated: bool,
+            exit_code: int | None, 
         ) -> None:
         
         border_style = f"tool.{tool_kind}" if tool_kind else "tool"

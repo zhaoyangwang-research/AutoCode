@@ -79,10 +79,8 @@ class HookConfig(BaseModel):
 
 class ShellEnvironmentPolicy(BaseModel):
     ignore_default_excludes: bool = False
-    
-
-
-
+    exclue_patterns: list[str] = Field(default_factory=["*Key*", "*Token*", "*SECRET*"])
+    set_vars: dict[str, str] = Field(default_factory=dict)
 
 
 class Config(BaseModel):
@@ -93,23 +91,16 @@ class Config(BaseModel):
         default_factory= ShellEnvironmentPolicy
     )
 
-
     approval: ApprovalPolicy = ApprovalPolicy.ON_REQUEST
     hooks_enabled: bool = False
     hooks: list[HookConfig] = Field(default_factory=HookConfig)
     max_turns: int = 100
     mcp_serves: dict[str, MCPServerConfig] = Field(default_factory=dict)
 
-
-
-
     allowed_tools: list[str] | None = Field(
         None,
         description="If set, only these tools will be available"
     )
-
-
-
 
     developer_instructions: str | None = None
     user_instructions: str | None = None

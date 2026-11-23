@@ -47,11 +47,6 @@ class FileDiff:
 
         return "".join(diff)
 
-
-
-
-
-
 @dataclass
 class ToolInvocation:
     params: dict[str, Any]
@@ -68,9 +63,6 @@ class ToolConfirmation:
     command: str | None = None
     command: str | None = None
     is_dangerous: bool = False
-
-
-
 
 
 @dataclass
@@ -117,22 +109,13 @@ class ToolResult:
         return f"Error: {self.error}\n\nOutput:\n{self.output}"
 
 
-
-    
-
-
-
-    
-
-
-
 class Tool(abc.ABC):
     name: str = "base_tool"
     description: str = "Base tool"
     kind: ToolKind = ToolKind.READ
 
-    def __init__(self) -> None:
-        pass
+    def __init__(self, config: Config) -> None:
+        self.config = config
 
     @property
     def schema(self) -> dict[str, Any] | type["BaseModel"]:
