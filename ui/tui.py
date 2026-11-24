@@ -343,8 +343,7 @@ class TUI:
                 self.config.model_name,
                 self._max_blocks_tokens,
             )
-
-
+            
         if truncated:
             blocks.append(Text("note: tool output was truncated", style="warning"))
         
