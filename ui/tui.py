@@ -20,6 +20,8 @@ import re
 
 
 
+
+
 AGENT_THEME = Theme(
     {
         #general
@@ -76,6 +78,7 @@ class TUI:
             'read_file':['path', 'offset', 'linit'],
             'write_file':["path", "create_directories", "content"],
             'edit':  ["path", "replace_all", "old_string", "new_string"], 
+            "shell": ["command", "timeout", "cwd"],
             'memory': ["action", "key", "value"]
         }
         
@@ -222,6 +225,8 @@ class TUI:
             (f"#{call_id[:8]}", "muted"), 
         )
 
+        args = self._tool_args_by_call_id.get(call_id, {})
+
         primary_path = None
         blocks = []
         if isinstance(metadata, dict) and isinstance(metadata.get("path"), str):
@@ -292,6 +297,30 @@ class TUI:
                 theme='monokai', 
                 word_wrap=True))
 
+        elif name == "shell":
+            command = args.get('command')
+
+            if isinstance(command, str) and command.strip():
+                blocks.append(Text(f'${command.strip()}', style = 'muted'))
+
+            if exit_code is not None:
+                blocks.append(Text(f'exit_code = {exit_code}', style  = 'muted'))
+
+            output_display = truncate_text(
+                output, 
+                self.config.model_name,
+                self._max_blocks_token,
+            )
+
+            blocks.append(
+                Syntax(
+                    output_display,
+                    "text",
+                    theme= "monokai",
+                    word_wrap = True,
+                )
+            )
+
         elif name == "memory" and success:
             action = args.get('action')
             key = args.get("key")
@@ -315,6 +344,7 @@ class TUI:
                 self._max_blocks_tokens,
             )
 
+
         if truncated:
             blocks.append(Text("note: tool output was truncated", style="warning"))
         
@@ -335,8 +365,6 @@ class TUI:
         self.console.print(panel)
 
     
-
-            
     def handle_confirmation(self, confirmation: ToolConfirmation) -> bool:
         output = [
             Text(confirmation.tool_name, style = 'tool')
