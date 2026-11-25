@@ -79,6 +79,7 @@ class TUI:
             'write_file':["path", "create_directories", "content"],
             'edit':  ["path", "replace_all", "old_string", "new_string"], 
             "shell": ["command", "timeout", "cwd"],
+            "list_dir": ["path", "include_hidden"], 
             'memory': ["action", "key", "value"]
         }
         
@@ -111,6 +112,9 @@ class TUI:
                     byte_count = len(value.encode('utf-8', error='replace'))
                     value = f"<{line_count} lines {byte_count} bytes>"
 
+            if isinstance(value, bool):
+                return str(value)
+ 
             table.add_row(key, value)
 
         return table
@@ -320,6 +324,38 @@ class TUI:
                     word_wrap = True,
                 )
             )
+
+
+        elif name == "list_dir":
+
+            entries = metadata.get('entries')
+            path = metadata.get('path')
+
+            summary = []
+            if isinstance(path, str):
+                summary.append(path)
+
+            if isinstance(entries, int):
+                summary.append(f"{entries} entries")
+
+            if summary:
+                blocks.append(Text("".join(summary), style = 'muted'))
+
+            output_display = truncate_text(
+                output, 
+                self.config.model_name,
+                self._max_block_tokens,
+            )
+
+            blocks.append(
+                Syntax(
+                    output_display,
+                    "text",
+                    theme= "monokai",
+                    word_wrap = True,
+                )
+            )
+
 
         elif name == "memory" and success:
             action = args.get('action')

@@ -7,7 +7,8 @@ class ListDirParams(BaseModel):
     include_hidden: bool = Field(
         False, 
         description = 'Whether to include hidden files and directories (default: fasel)')
-    
+
+
 
 class ListDirTool(Tool):
     name = 'list_dir'
